@@ -36,34 +36,41 @@ const getContributionsMarkdown = async (
   );
   const markdown: string[] = [];
 
-  contributionsYears.forEach((cy) => {
-    markdown.push(
-      `## ${cy.startDate.toDateString()} - ${cy.endDate.toDateString()}\n\n<details>\n`
-    );
-    cy.repos.forEach((r) => {
-      const header = headerFormat
-        .replace(REPO_NAME_SYMBOL, r.name)
-        .replace(REPO_URL_SYMBOL, r.url)
-        .replace(
-          NO_COMMITS_SYMBOL,
-          r.commits.toString() + (r.commits === 1 ? " commit" : " commits")
-        )
-        .replace(COMMITS_URL_SYMBOL, r.commitsUrl)
-        .replace(
-          PRIMARY_LANGUAGE_SYMBOL,
-          r.primaryLanguage ?? "No primary language"
-        )
-        .replace(REPO_DESCRIPTION_SYMBOL, r.description ?? "No description");
+  contributionsYears
+    .filter((cy) => cy.repos.length > 0)
+    .forEach((cy) => {
+      markdown.push(
+        `## ${cy.startDate.toDateString()} - ${cy.endDate.toDateString()}\n\n<details>\n`
+      );
+      cy.repos
+        .filter((r) => !r.isPrivate)
+        .forEach((r) => {
+          const header = headerFormat
+            .replace(REPO_NAME_SYMBOL, r.name)
+            .replace(REPO_URL_SYMBOL, r.url)
+            .replace(
+              NO_COMMITS_SYMBOL,
+              r.commits.toString() + (r.commits === 1 ? " commit" : " commits")
+            )
+            .replace(COMMITS_URL_SYMBOL, r.commitsUrl)
+            .replace(
+              PRIMARY_LANGUAGE_SYMBOL,
+              r.primaryLanguage ?? "No primary language"
+            )
+            .replace(
+              REPO_DESCRIPTION_SYMBOL,
+              r.description ?? "No description"
+            );
 
-      const highlighted =
-        r.stars >= minimumStarsForHighlight
-          ? highlightFormat.replace(HEADER_SYMBOL, header)
-          : header;
+          const highlighted =
+            r.stars >= minimumStarsForHighlight
+              ? highlightFormat.replace(HEADER_SYMBOL, header)
+              : header;
 
-      markdown.push(`### ${highlighted}\n`);
+          markdown.push(`### ${highlighted}\n`);
+        });
+      markdown.push(`</details>\n`);
     });
-    markdown.push(`</details>\n`);
-  });
 
   return markdown.join("\n");
 };
