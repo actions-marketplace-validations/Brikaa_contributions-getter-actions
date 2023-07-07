@@ -37,12 +37,17 @@ const getContributionsMarkdown = async (
   const markdown: string[] = [];
 
   contributionsYears.forEach((cy) => {
-    markdown.push(`## ${cy.startDate} - ${cy.endDate}\n\n<details>\n`);
+    markdown.push(
+      `## ${cy.startDate.toDateString()} - ${cy.endDate.toDateString()}\n\n<details>\n`
+    );
     cy.repos.forEach((r) => {
       const header = headerFormat
         .replace(REPO_NAME_SYMBOL, r.name)
         .replace(REPO_URL_SYMBOL, r.url)
-        .replace(NO_COMMITS_SYMBOL, r.commits.toString())
+        .replace(
+          NO_COMMITS_SYMBOL,
+          r.commits.toString() + (r.commits === 1 ? " commit" : " commits")
+        )
         .replace(COMMITS_URL_SYMBOL, r.commitsUrl)
         .replace(
           PRIMARY_LANGUAGE_SYMBOL,
