@@ -1,19 +1,21 @@
 import { getContributions } from "contributions-getter";
-import { Config } from "./types/configTypes";
+import { Config } from "../types/configTypes";
 import {
   COMMITS_URL_SYMBOL,
   DEFAULT_HEADER_FORMAT,
   DEFAULT_HIGHLIGHT_FORMAT,
+  DEFAULT_MINIMUM_STARS_FOR_HIGHLIGHT,
+  DEFAULT_MONTHS_INTERVAL,
   HEADER_SYMBOL,
   NO_COMMITS_SYMBOL,
   PRIMARY_LANGUAGE_SYMBOL,
   REPO_DESCRIPTION_SYMBOL,
   REPO_NAME_SYMBOL,
   REPO_URL_SYMBOL,
-} from "./constants/formatConstants";
-import { TOKEN_ENV, USERNAME_ENV } from "./constants/envConstants";
-import { MissingEnvironmentVariablesExceptions } from "./exceptions/exceptions";
-import { Environment } from "./types/envTypes";
+} from "./constants";
+import { Environment } from "../types/envTypes";
+import { readFileSync } from "fs";
+import { cleanEnv, makeValidator, str } from "envalid";
 
 const getContributionsMarkdown = async (
   token: string,
@@ -22,19 +24,27 @@ const getContributionsMarkdown = async (
 ) => {
   const {
     contributionsGetterConfig = {},
-    fileAfter,
     fileBefore,
+    fileAfter,
     headerFormat = DEFAULT_HEADER_FORMAT,
     highlightFormat = DEFAULT_HIGHLIGHT_FORMAT,
-    minimumStarsForHighlight = 1000,
+    minimumStarsForHighlight = DEFAULT_MINIMUM_STARS_FOR_HIGHLIGHT,
   } = config;
+
+  const markdown: string[] = [];
+  if (fileBefore !== undefined)
+    markdown.push(readFileSync(fileBefore).toString());
+
+  let contentAfter = null;
+  // Need to read the afterFile early in order to fail on error without wasting API quota
+  if (fileAfter !== undefined)
+    contentAfter = readFileSync(fileAfter).toString();
 
   const contributionsYears = await getContributions(
     token,
     userName,
     contributionsGetterConfig
   );
-  const markdown: string[] = [];
 
   contributionsYears
     .filter((cy) => cy.repos.length > 0)
@@ -72,24 +82,40 @@ const getContributionsMarkdown = async (
       markdown.push(`</details>\n`);
     });
 
+  if (contentAfter !== null) markdown.push(contentAfter);
   return markdown.join("\n");
 };
 
-const getEnvironment = (env: NodeJS.ProcessEnv): Environment => {
-  for (const variable of [TOKEN_ENV, USERNAME_ENV]) {
-    if (env[variable] === undefined)
-      throw new MissingEnvironmentVariablesExceptions(
-        `Environment variable ${variable} is missing`
-      );
-  }
-  return {
-    token: env[TOKEN_ENV]!,
-    username: env[USERNAME_ENV]!,
-  };
-};
-
 (async () => {
-  const env = getEnvironment(process.env);
-  const markdown = await getContributionsMarkdown(env.token, env.username);
+  const int = makeValidator((x) => {
+    const xInt = parseInt(x);
+    if (isNaN(xInt)) throw new Error("Expected a number");
+    else return xInt;
+  });
+  const env = cleanEnv<Environment>(process.env, {
+    GITHUB_TOKEN: str(),
+    GITHUB_USERNAME: str(),
+    FILE_AFTER: str({ default: undefined }),
+    FILE_BEFORE: str({ default: undefined }),
+    HEADER_FORMAT: str({ default: DEFAULT_HEADER_FORMAT }),
+    HIGHLIGHT_FORMAT: str({ default: DEFAULT_HIGHLIGHT_FORMAT }),
+    MINIMUM_STARS_FOR_HIGHLIGHT: int({ default: undefined }),
+    MONTHS_INTERVAL: int({ default: DEFAULT_MONTHS_INTERVAL }),
+  });
+  const config: Config = {
+    contributionsGetterConfig: {
+      monthsInterval: env.MONTHS_INTERVAL,
+    },
+    headerFormat: env.HEADER_FORMAT,
+    highlightFormat: env.HIGHLIGHT_FORMAT,
+    fileBefore: env.FILE_BEFORE,
+    fileAfter: env.FILE_AFTER,
+    minimumStarsForHighlight: env.MINIMUM_STARS_FOR_HIGHLIGHT,
+  };
+  const markdown = await getContributionsMarkdown(
+    env.GITHUB_TOKEN,
+    env.GITHUB_USERNAME,
+    config
+  );
   console.log(markdown);
 })();

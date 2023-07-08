@@ -1,14 +1,14 @@
 {
   "dependencies": {
     "@types/node": "^20.4.0",
-    "contributions-getter": "^1.0.1"
+    "contributions-getter": "^1.0.1",
+    "envalid": "^7.3.1"
   },
   "devDependencies": {
-    "ts-node": "^10.9.1",
     "typescript": "^5.1.6"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/main/index.js"
   }
 }

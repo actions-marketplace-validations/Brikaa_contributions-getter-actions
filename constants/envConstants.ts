@@ -1,2 +1,0 @@
-export const TOKEN_ENV = "GITHUB_TOKEN";
-export const USERNAME_ENV = "GITHUB_USERNAME"
