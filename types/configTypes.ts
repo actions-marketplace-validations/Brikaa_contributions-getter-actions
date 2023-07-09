@@ -1,4 +1,12 @@
-import { Config as ContributionsGetterConfig } from "contributions-getter";
+import {
+  Contribution,
+  Config as ContributionsGetterConfig,
+  getContributions,
+} from "contributions-getter";
+
+export type GetContributionsType = (
+  ...args: Parameters<typeof getContributions>
+) => Promise<Contribution[]>;
 
 export interface Config {
   contributionsGetterConfig?: ContributionsGetterConfig;
@@ -7,4 +15,5 @@ export interface Config {
   fileBefore?: string;
   fileAfter?: string;
   minimumStarsForHighlight?: number;
+  getContributionsFn?: GetContributionsType;
 }
