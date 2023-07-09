@@ -65,11 +65,11 @@ const getContributionsMarkdown = async (
             .replace(COMMITS_URL_SYMBOL, r.commitsUrl)
             .replace(
               PRIMARY_LANGUAGE_SYMBOL,
-              r.primaryLanguage ?? "No primary language"
+              r.primaryLanguage ?? "no primary language"
             )
             .replace(
               REPO_DESCRIPTION_SYMBOL,
-              r.description ?? "No description"
+              r.description ?? "no description"
             );
 
           const highlighted =
