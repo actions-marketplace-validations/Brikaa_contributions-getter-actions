@@ -79,11 +79,13 @@ const getContributionsMarkdown = async (
 
           markdown.push(`### ${highlighted}\n`);
         });
-      markdown.push(`</details>\n`);
+      markdown.push(`</details>`);
+      markdown.push("");
     });
 
+  markdown.pop();
   if (contentAfter !== null) markdown.push(contentAfter);
-  return markdown.join("\n").trim();
+  return markdown.join("\n");
 };
 
 export const getContributionsMarkdownUsingEnvConfig = async (
