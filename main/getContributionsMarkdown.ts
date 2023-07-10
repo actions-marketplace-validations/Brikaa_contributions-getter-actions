@@ -20,7 +20,7 @@ import { cleanEnv, makeValidator, str } from "envalid";
 const getContributionsMarkdown = async (
   token: string,
   userName: string,
-  config: Config = {}
+  config: Config = {},
 ) => {
   const {
     contributionsGetterConfig = {},
@@ -43,14 +43,14 @@ const getContributionsMarkdown = async (
   const contributionsYears = await getContributionsFn(
     token,
     userName,
-    contributionsGetterConfig
+    contributionsGetterConfig,
   );
 
   contributionsYears
     .filter((cy) => cy.repos.length > 0)
     .forEach((cy) => {
       markdown.push(
-        `## ${cy.startDate.toDateString()} - ${cy.endDate.toDateString()}\n\n<details>\n`
+        `## ${cy.startDate.toDateString()} - ${cy.endDate.toDateString()}\n\n<details>\n`,
       );
       cy.repos
         .filter((r) => !r.isPrivate)
@@ -60,16 +60,16 @@ const getContributionsMarkdown = async (
             .replace(REPO_URL_SYMBOL, r.url)
             .replace(
               NO_COMMITS_SYMBOL,
-              r.commits.toString() + (r.commits === 1 ? " commit" : " commits")
+              r.commits.toString() + (r.commits === 1 ? " commit" : " commits"),
             )
             .replace(COMMITS_URL_SYMBOL, r.commitsUrl)
             .replace(
               PRIMARY_LANGUAGE_SYMBOL,
-              r.primaryLanguage ?? "no primary language"
+              r.primaryLanguage ?? "no primary language",
             )
             .replace(
               REPO_DESCRIPTION_SYMBOL,
-              r.description ?? "no description"
+              r.description ?? "no description",
             );
 
           const highlighted =
@@ -89,7 +89,7 @@ const getContributionsMarkdown = async (
 };
 
 export const getContributionsMarkdownUsingEnvConfig = async (
-  getContributionsFn: GetContributionsType = getContributions
+  getContributionsFn: GetContributionsType = getContributions,
 ) => {
   const int = makeValidator((x) => {
     const xInt = parseInt(x);
@@ -122,7 +122,7 @@ export const getContributionsMarkdownUsingEnvConfig = async (
   const markdown = await getContributionsMarkdown(
     env.GITHUB_TOKEN,
     env.GITHUB_USERNAME,
-    config
+    config,
   );
   return markdown;
 };
