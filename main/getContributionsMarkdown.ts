@@ -50,7 +50,7 @@ const getContributionsMarkdown = async (
     .filter((cy) => cy.repos.length > 0)
     .forEach((cy) => {
       markdown.push(
-        `## ${cy.startDate.toDateString()} - ${cy.endDate.toDateString()}\n\n<details>\n`,
+        `## ${cy.startDate.getFullYear()} - ${cy.endDate.getFullYear()}\n\n<details>\n`,
       );
       cy.repos
         .filter((r) => !r.isPrivate)
