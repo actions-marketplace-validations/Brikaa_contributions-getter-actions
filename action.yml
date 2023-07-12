@@ -1,0 +1,69 @@
+name: contributions-getter-actions
+description: 'get all of the repositories you contributed to since your account creation'
+inputs:
+    token:
+      description: 'Your GitHub token'
+      required: true
+    output-file-name:
+      description: 'The name of the file in which to output the contributions'
+      required: false
+      default: 'README.md'
+    header-format:
+      description: 'Check documentation'
+      required: false
+    highlight-format:
+      description: 'Check documentation'
+      required: false
+    file-before-path:
+      description: 'Check documentation'
+      required: false
+    file-after-path:
+      description: 'Check documentation'
+      required: false
+    minimum-stars-for-highlight:
+      description: 'Check documentation'
+      required: false
+      type: number
+    months-interval:
+      description: 'Check documentation'
+      required: false
+      type: number
+runs:
+  using: composite
+  steps:
+    - name: Checkout the repo
+      uses: actions/checkout@v3
+      with:
+        path: 'target'
+    - name: Setup Node
+      uses: actions/setup-node@v3
+    - name: Install npm packages and build code
+      run: cd "${{ github.action_path }}" && npm install && npm run build
+      shell: bash
+    - name: Set env vars
+      run: |
+        names=("TOKEN=" "USERNAME=" "HEADER_FORMAT=" "HIGHLIGHT_FORMAT=" "FILE_BEFORE_PATH=" "FILE_AFTER_PATH=" "MINIMUM_STARS_FOR_HIGHLIGHT=" "MONTHS_INTERVAL=")
+        values=("${{ inputs.token }}" "${{ github.repository_owner }}" "${{ inputs.header-format }}" "${{ inputs.highlight-format }}" "${{ inputs.file-before-path }}" "${{ inputs.file-after-path }}" "${{ inputs.minimum-stars-for-highlight }}" "${{ inputs.months-interval }}")
+        length=${#names[@]}
+        let l=$length-1
+        for i in $(seq 0 $l); do
+          if [ -n "${values[i]}" ]; then
+            if [ "${names[i]}" = "FILE_BEFORE_PATH=" ] || [ "${names[i]}" = "FILE_AFTER_PATH=" ]; then
+              values[$i]="$GITHUB_WORKSPACE/target/""${values[i]}"
+            fi
+            echo "${names[i]}${values[i]}" >> "$GITHUB_ENV"
+          fi
+        done
+      shell: bash
+    - name: Run
+      run: cd "${{ github.action_path }}" && npm start --silent > "$GITHUB_WORKSPACE/target/${{ inputs.output-file-name }}"
+      shell: bash
+    - name: Commit
+      run: |
+        cd "$GITHUB_WORKSPACE/target"
+        git add -A
+        git config --global user.email "contributions-getter"
+        git config --global user.name "contributions-getter"
+        git commit -m "Update contributions"
+        git push
+      shell: bash
