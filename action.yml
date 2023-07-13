@@ -1,44 +1,51 @@
 name: contributions-getter-actions
-description: 'get all of the repositories you contributed to since your account creation'
+description: "Update a markdown file with all of the repositories you have contributed to since your account creation"
 inputs:
-    token:
-      description: 'Your GitHub token'
-      required: true
-    output-file-name:
-      description: 'The name of the file in which to output the contributions'
-      required: false
-      default: 'README.md'
-    header-format:
-      description: 'Check documentation'
-      required: false
-    highlight-format:
-      description: 'Check documentation'
-      required: false
-    file-before-path:
-      description: 'Check documentation'
-      required: false
-    file-after-path:
-      description: 'Check documentation'
-      required: false
-    minimum-stars-for-highlight:
-      description: 'Check documentation'
-      required: false
-      type: number
-    months-interval:
-      description: 'Check documentation'
-      required: false
-      type: number
+  token:
+    description: "Your GitHub token"
+    required: true
+  output-file-name:
+    description: "The name of the file in which to output the contributions"
+    required: false
+    default: "README.md"
+  header-format:
+    description: "Check documentation"
+    required: false
+  highlight-format:
+    description: "Check documentation"
+    required: false
+  file-before-path:
+    description: "Check documentation"
+    required: false
+  file-after-path:
+    description: "Check documentation"
+    required: false
+  minimum-stars-for-highlight:
+    description: "Check documentation"
+    required: false
+    type: number
+  months-interval:
+    description: "Check documentation"
+    required: false
+    type: number
 runs:
   using: composite
   steps:
     - name: Checkout the repo
       uses: actions/checkout@v3
       with:
-        path: 'target'
+        path: "target"
     - name: Setup Node
       uses: actions/setup-node@v3
     - name: Install npm packages and build code
       run: cd "${{ github.action_path }}" && npm install && npm run build
+      shell: bash
+    - name: Validate paths
+      run: |
+        cd "$GITHUB_WORKSPACE/target"
+        for i in "${{ inputs.output-file-name }}" "${{ inputs.file-before-path }}" "${{ inputs.file-after-path }}"; do
+          node scripts/checkSafePath.js "$(pwd)" "$i"
+        done
       shell: bash
     - name: Set env vars
       run: |
@@ -61,9 +68,13 @@ runs:
     - name: Commit
       run: |
         cd "$GITHUB_WORKSPACE/target"
-        git add -A
-        git config --global user.email "contributions-getter"
-        git config --global user.name "contributions-getter"
-        git commit -m "Update contributions"
-        git push
+        if [[ `git status --porcelain` ]]; then
+          git add -A
+          git config --global user.email "contributions-getter"
+          git config --global user.name "contributions-getter"
+          git commit -m "Update contributions"
+          git push
+        else
+          echo "No changes"
+        fi
       shell: bash

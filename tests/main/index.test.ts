@@ -1,4 +1,3 @@
-import "dotenv/config";
 import {
   COMMITS_URL_SYMBOL,
   HEADER_SYMBOL,
@@ -9,9 +8,7 @@ import {
   REPO_URL_SYMBOL,
 } from "../../main/constants";
 import { expect, jest } from "@jest/globals";
-import { Contribution } from "contributions-getter";
 import { getContributionsMarkdownUsingEnvConfig } from "../../main/getContributionsMarkdown";
-import { GetContributionsType } from "../../types/configTypes";
 import path from "path";
 
 type Environment = { [key: string]: string | undefined };
@@ -23,133 +20,48 @@ using ${PRIMARY_LANGUAGE_SYMBOL}\n${REPO_DESCRIPTION_SYMBOL}`;
 const HIGHLIGHT_FORMAT = `[COOL] ${HEADER_SYMBOL}`;
 const FILE_BEFORE_PATH = path.join(__dirname, "before.md");
 const FILE_AFTER_PATH = path.join(__dirname, "after.md");
-const TOKEN = process.env.TOKEN;
-const USERNAME = process.env.USERNAME;
+const TOKEN = "MOCK_TOKEN";
+const USERNAME = "Brikaa";
+const EMPTY_GET_CONTRIBUTION_FN = "EMPTY";
+const SINGLE_YEAR_GET_CONTRIBUTION_FN = "SINGLE";
+const MULTIPLE_YEARS_GET_CONTRIBUTION_FN = "MULTIPLE";
+const INVALID_GET_CONTRIBUTIONS_FN = "INVALID";
 
-/*
-Combinations
-- Single year, HEADER_FORMAT: default, HIGHLIGHT_FORMAT: default,
-  FILE_BEFORE_PATH: default, FILE_AFTER_PATH: default, MINIMUM_STARS_FOR_HIGHLIGHT: default, MONTHS_INTERVAL: default
-- Multiple years, HEADER_FORMAT: default, HIGHLIGHT_FORMAT: modified,
-  FILE_BEFORE_PATH: default, FILE_AFTER_PATH: modified, MINIMUM_STARS_FOR_HIGHLIGHT: modified, MONTHS_INTERVAL: modified
-- Multiple years, HEADER_FORMAT: modified, HIGHLIGHT_FORMAT: default,
-  FILE_BEFORE_PATH: modified, FILE_AFTER_PATH: default, MINIMUM_STARS_FOR_HIGHLIGHT: default, MONTHS_INTERVAL: default
-- Multiple years, HEADER_FORMAT: modified, HIGHLIGHT_FORMAT: modified,
-  FILE_BEFORE_PATH: modified, FILE_AFTER_PATH: modified, MINIMUM_STARS_FOR_HIGHLIGHT: default, MONTHS_INTERVAL: default
-- Empty, first
-*/
 const ENV_COMBINATIONS: Environment[] = [
-  { TOKEN, USERNAME },
   {
-    TOKEN,
-    USERNAME,
+    GET_CONTRIBUTIONS_FN: SINGLE_YEAR_GET_CONTRIBUTION_FN,
+  },
+  {
+    GET_CONTRIBUTIONS_FN: MULTIPLE_YEARS_GET_CONTRIBUTION_FN,
     HIGHLIGHT_FORMAT,
     FILE_AFTER_PATH,
     MINIMUM_STARS_FOR_HIGHLIGHT,
     MONTHS_INTERVAL,
   },
   {
-    TOKEN,
-    USERNAME,
+    GET_CONTRIBUTIONS_FN: MULTIPLE_YEARS_GET_CONTRIBUTION_FN,
     HEADER_FORMAT,
     FILE_BEFORE_PATH,
   },
   {
-    TOKEN,
-    USERNAME,
+    GET_CONTRIBUTIONS_FN: MULTIPLE_YEARS_GET_CONTRIBUTION_FN,
     HEADER_FORMAT,
     HIGHLIGHT_FORMAT,
     FILE_AFTER_PATH,
     FILE_BEFORE_PATH,
   },
   {
-    TOKEN,
-    USERNAME,
     MINIMUM_STARS_FOR_HIGHLIGHT: INVALID_MINIMUM_STARS_FOR_HIGHLIGHT,
   },
-];
+  {
+    GET_CONTRIBUTIONS_FN: EMPTY_GET_CONTRIBUTION_FN,
+  },
+  {
+    GET_CONTRIBUTIONS_FN: INVALID_GET_CONTRIBUTIONS_FN,
+  },
+].map((ec) => ({ ...ec, TOKEN, USERNAME }));
 
-const FIRST_YEAR_CONTRIBUTION: Contribution = {
-  startDate: new Date("2019-07-08T18:19:55.477Z"),
-  endDate: new Date("2020-07-08T18:19:55.477Z"),
-  repos: [
-    {
-      name: "First repo",
-      description: "It's a cool repo",
-      commits: 123,
-      commitsUrl: "https://www.youtube.com",
-      isPrivate: false,
-      primaryLanguage: "Python",
-      stars: 33,
-      url: "https://www.google.com",
-    },
-    {
-      name: "second-repo",
-      description: null,
-      commits: 1,
-      commitsUrl: "https://github.com",
-      isPrivate: false,
-      primaryLanguage: null,
-      stars: 3000,
-      url: "https://www.fast.com",
-    },
-  ],
-};
-
-const SECOND_YEAR_CONTRIBUTION: Contribution = {
-  startDate: new Date("2020-07-08T18:19:55.477Z"),
-  endDate: new Date("2021-07-08T18:19:55.477Z"),
-  repos: [],
-};
-
-const THIRD_YEAR_CONTRIBUTION: Contribution = {
-  startDate: new Date("2021-07-08T18:19:55.477Z"),
-  endDate: new Date("2022-07-08T18:19:55.477Z"),
-  repos: [
-    {
-      name: "third-repo",
-      description: "It's a repo",
-      commits: 450,
-      commitsUrl: "https://www.github.com/new",
-      isPrivate: true,
-      primaryLanguage: "Java",
-      stars: 550,
-      url: "https://www.github.com/brikaa",
-    },
-    {
-      name: "fourth-repo",
-      description: null,
-      commits: 600,
-      commitsUrl: "https://www.github.com/microsoft",
-      isPrivate: false,
-      primaryLanguage: null,
-      stars: 520,
-      url: "https://www.github.com/microsoft/vscode",
-    },
-  ],
-};
-
-const createMockGetContributions = (
-  returnValue: Contribution[],
-): GetContributionsType =>
-  jest.fn<GetContributionsType>().mockResolvedValue(returnValue);
-
-/*
-- One empty
-- One single year
-- One multiple years with empty periods, non private repos
-*/
-const emptyGetContributions = createMockGetContributions([]);
-const singleYearGetContributions = createMockGetContributions([
-  FIRST_YEAR_CONTRIBUTION,
-]);
-const multipleYearsGetContributions = createMockGetContributions([
-  FIRST_YEAR_CONTRIBUTION,
-  SECOND_YEAR_CONTRIBUTION,
-  THIRD_YEAR_CONTRIBUTION,
-]);
-
-const COMB0_EXPECTED_MARKDOWN = `## 2019 - 2020
+const COMB0_EXPECTED_MARKDOWN = `## 2019-07-10 -> 2020-07-10
 
 <details>
 
@@ -161,7 +73,7 @@ no description
 
 </details>`;
 
-const COMB1_EXPECTED_MARKDOWN = `## 2019 - 2020
+const COMB1_EXPECTED_MARKDOWN = `## 2019-07-10 -> 2020-07-10
 
 <details>
 
@@ -173,7 +85,7 @@ no description
 
 </details>
 
-## 2021 - 2022
+## 2021-07-10 -> 2022-07-10
 
 <details>
 
@@ -187,7 +99,7 @@ Generated by [brikaa/contributions-getter-actions](https://www.google.com)
 
 const COMB2_EXPECTED_MARKDOWN = `# Repositories I have contributed to
 
-## 2019 - 2020
+## 2019-07-10 -> 2020-07-10
 
 <details>
 
@@ -199,7 +111,7 @@ no description
 
 </details>
 
-## 2021 - 2022
+## 2021-07-10 -> 2022-07-10
 
 <details>
 
@@ -211,7 +123,7 @@ no description
 
 const COMB3_EXPECTED_MARKDOWN = `# Repositories I have contributed to
 
-## 2019 - 2020
+## 2019-07-10 -> 2020-07-10
 
 <details>
 
@@ -223,7 +135,7 @@ no description
 
 </details>
 
-## 2021 - 2022
+## 2021-07-10 -> 2022-07-10
 
 <details>
 
@@ -237,68 +149,58 @@ Generated by [brikaa/contributions-getter-actions](https://www.google.com)
 `;
 
 const testAgainstCombination = async (
-  getContributionsFn: GetContributionsType,
   combinationNumber: number,
   expectedMarkdown: string,
 ) => {
   process.env = ENV_COMBINATIONS[combinationNumber];
-  const markdown = await getContributionsMarkdownUsingEnvConfig(
-    getContributionsFn,
-  );
+  const markdown = await getContributionsMarkdownUsingEnvConfig();
   expect(markdown).toBe(expectedMarkdown);
 };
+
+const testAgainstProcessExitCombination = async (combinationNumber: number) => {
+  class ProcessExitError extends Error {}
+
+  const mockExit = jest.spyOn(process, "exit").mockImplementation(() => {
+    throw new ProcessExitError();
+  });
+  const mockError = jest
+    .spyOn(process.stdout, "write")
+    .mockImplementation(() => true);
+
+  await expect(() =>
+    testAgainstCombination(combinationNumber, ""),
+  ).rejects.toThrow(ProcessExitError);
+
+  mockExit.mockRestore();
+  mockError.mockRestore();
+};
+
 describe("Full path till returning the markdown", () => {
   it("returns correct markdown with combination 0", async () => {
-    testAgainstCombination(
-      singleYearGetContributions,
-      0,
-      COMB0_EXPECTED_MARKDOWN,
-    );
+    testAgainstCombination(0, COMB0_EXPECTED_MARKDOWN);
   });
 
   it("returns correct markdown with combination 1", async () => {
-    testAgainstCombination(
-      multipleYearsGetContributions,
-      1,
-      COMB1_EXPECTED_MARKDOWN,
-    );
+    testAgainstCombination(1, COMB1_EXPECTED_MARKDOWN);
   });
 
   it("returns correct markdown with combination 2", async () => {
-    testAgainstCombination(
-      multipleYearsGetContributions,
-      2,
-      COMB2_EXPECTED_MARKDOWN,
-    );
+    testAgainstCombination(2, COMB2_EXPECTED_MARKDOWN);
   });
 
   it("returns correct markdown with combination 3", async () => {
-    testAgainstCombination(
-      multipleYearsGetContributions,
-      3,
-      COMB3_EXPECTED_MARKDOWN,
-    );
+    testAgainstCombination(3, COMB3_EXPECTED_MARKDOWN);
   });
 
   it("exits when the minimum number of stars is not a valid number (combination 4)", async () => {
-    class ProcessExitError extends Error {}
-
-    const mockExit = jest.spyOn(process, "exit").mockImplementation(() => {
-      throw new ProcessExitError();
-    });
-    const mockError = jest
-      .spyOn(process.stdout, "write")
-      .mockImplementation(() => true);
-
-    await expect(() =>
-      testAgainstCombination(multipleYearsGetContributions, 4, ""),
-    ).rejects.toThrow(ProcessExitError);
-
-    mockExit.mockRestore();
-    mockError.mockRestore();
+    testAgainstProcessExitCombination(4);
   });
 
-  it("returns empty markdown when there are no contributions", async () => {
-    testAgainstCombination(emptyGetContributions, 0, "");
+  it("returns empty markdown when there are no contributions (combination 5)", async () => {
+    testAgainstCombination(5, "");
+  });
+
+  it("exits when the GET_CONTRIBUTIONS_FN is invalid (combination 6)", async () => {
+    testAgainstProcessExitCombination(6);
   });
 });

@@ -26,7 +26,7 @@ Prolog basics
 ### [seam-project/seam-project](https://github.com/seam-project/seam-project) - [29 commits](https://github.com/seam-project/seam-project/commits?author=Brikaa&since=2022-07-13&until=2023-07-14) - no primary language
 no description
 
-### [Brikaa/contributions-getter](https://github.com/Brikaa/contributions-getter) - [23 commits](https://github.com/Brikaa/contributions-getter/commits?author=Brikaa&since=2022-07-13&until=2023-07-14) - TypeScript
+### [Brikaa/contributions-getter](https://github.com/Brikaa/contributions-getter) - [24 commits](https://github.com/Brikaa/contributions-getter/commits?author=Brikaa&since=2022-07-13&until=2023-07-14) - TypeScript
 A JavaScript/TypeScript library that gets all of the repositories a user has contributed to since their account's creation
 
 ### [Brikaa/cpl-js-research](https://github.com/Brikaa/cpl-js-research) - [22 commits](https://github.com/Brikaa/cpl-js-research/commits?author=Brikaa&since=2022-07-13&until=2023-07-14) - TeX
