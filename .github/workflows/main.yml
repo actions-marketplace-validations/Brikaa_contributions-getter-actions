@@ -7,7 +7,90 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - uses: ./
+      - name: Setup Node
+        uses: actions/setup-node@v3
+      - name: Install npm packages and build code
+        run: npm ci && npm run build
+        shell: bash
+      - name: Run unit tests
+        run: npm test
+        shell: bash
+      - name: Set env vars
+        run: |
+          cat tests/main/outputs/.env >> $GITHUB_ENV
+          echo "TESTS_RESULT<<EOF" >> $GITHUB_ENV
+          cat tests/main/outputs/unit.md >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        shell: bash
+      - name: Set happy path output
+        uses: ./
         with:
-          token: ${{ secrets.TOKEN }}
-          output-file-name: example.md
+          token: ${{ env.TOKEN }}
+          username: ${{ env.USERNAME }}
+          output-file-path: tests/main/outputs/action.md
+          header-format: ${{ env.HEADER_FORMAT }}
+          highlight-format: ${{ env.HIGHLIGHT_FORMAT }}
+          file-before-path: ${{ env.FILE_BEFORE_PATH }}
+          file-after-path: ${{ env.FILE_AFTER_PATH }}
+          minimum-stars-for-highlight: ${{ env.MINIMUM_STARS_FOR_HIGHLIGHT }}
+          months-interval: ${{ env.MONTHS_INTERVAL }}
+          get-contributions-fn: ${{ env.GET_CONTRIBUTIONS_FN }}
+      - name: Verify happy path output
+        run: |
+          echo "$TESTS_RESULT" > tests/main/outputs/unit.md
+          echo "================= unit.md ================="
+          cat tests/main/outputs/unit.md
+          echo "================= action.md ================="
+          cat tests/main/outputs/action.md
+          if cmp tests/main/outputs/unit.md tests/main/outputs/action.md ; then
+            echo "Got same output as unit tests"
+          else
+            echo "Got different output than unit tests"
+            exit 1
+          fi
+        shell: bash
+      - name: Test with all defaults
+        uses: ./
+        with:
+          token: ${{ env.TOKEN }}
+          username: ${{ env.USERNAME }}
+          output-file-path: tests/main/outputs/action.md
+      - name: Output all defaults result
+        run: cat tests/main/outputs/action.md
+        shell: bash
+      - id: escape-output-file-path
+        name: Test escape output-file-path
+        uses: ./
+        continue-on-error: true
+        with:
+          token: ${{ env.TOKEN }}
+          username: ${{ env.USERNAME }}
+          output-file-path: ${{ github.env }}
+      - name: Fail if previous did not fail
+        run: exit 1
+        shell: bash
+        if: ${{ steps.escape-output-file-path.outcome != 'failure'}}
+      - id: escape-file-before-path
+        name: Test escape file-before-path
+        uses: ./
+        continue-on-error: true
+        with:
+          token: ${{ env.TOKEN }}
+          username: ${{ env.USERNAME }}
+          file-before-path: ${{ github.env }}
+      - name: Fail if previous did not fail
+        run: exit 1
+        shell: bash
+        if: ${{ steps.escape-file-before-path.outcome != 'failure'}}
+      - id: escape-file-after-path
+        name: Test escape file-after-path
+        uses: ./
+        continue-on-error: true
+        with:
+          token: ${{ env.TOKEN }}
+          username: ${{ env.USERNAME }}
+          file-after-path: ${{ github.env }}
+      - name: Fail if previous did not fail
+        run: exit 1
+        shell: bash
+        if: ${{ steps.escape-file-after-path.outcome != 'failure'}}
