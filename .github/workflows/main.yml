@@ -1,5 +1,5 @@
 name: contributions-getter
-on: workflow_dispatch
+on: [workflow_dispatch, pull_request, push]
 jobs:
   contributions_getter_job:
     runs-on: ubuntu-latest
@@ -34,7 +34,7 @@ jobs:
           file-after-path: ${{ env.FILE_AFTER_PATH }}
           minimum-stars-for-highlight: ${{ env.MINIMUM_STARS_FOR_HIGHLIGHT }}
           months-interval: ${{ env.MONTHS_INTERVAL }}
-          get-contributions-fn: ${{ env.GET_CONTRIBUTIONS_FN }}
+          mock-get-contributions-fn: ${{ env.MOCK_GET_CONTRIBUTIONS_FN }}
       - name: Verify happy path output
         run: |
           echo "$TESTS_RESULT" > tests/main/outputs/unit.md
@@ -54,6 +54,7 @@ jobs:
         with:
           token: ${{ env.TOKEN }}
           username: ${{ env.USERNAME }}
+          mock-get-contributions-fn: ${{ env.MOCK_GET_CONTRIBUTIONS_FN }}
           output-file-path: tests/main/outputs/action.md
       - name: Output all defaults result
         run: cat tests/main/outputs/action.md

@@ -30,7 +30,7 @@ inputs:
   months-interval:
     description: Check documentation
     required: false
-  get-contributions-fn:
+  mock-get-contributions-fn:
     description: Check documentation
     required: false
 runs:
@@ -50,32 +50,28 @@ runs:
           node scripts/checkSafePath.js "$(pwd)" "$i" || exit 1
         done
       shell: bash
-    - name: Set env vars
+    - name: Set env vars and run
       run: |
-        names=("TOKEN" "USERNAME" "HEADER_FORMAT" "HIGHLIGHT_FORMAT" "FILE_BEFORE_PATH" "FILE_AFTER_PATH" \
-        "MINIMUM_STARS_FOR_HIGHLIGHT" "MONTHS_INTERVAL" "GET_CONTRIBUTIONS_FN" "OUTPUT_FILE_PATH")
-
-        values=('${{ inputs.token }}' '${{ github.repository_owner }}' '${{ inputs.header-format }}' \
-        '${{ inputs.highlight-format }}' '${{ inputs.file-before-path }}' '${{ inputs.file-after-path }}' \
-        '${{ inputs.minimum-stars-for-highlight }}' '${{ inputs.months-interval }}' \
-        '${{ inputs.get-contributions-fn }}' '${{ inputs.output-file-path }}')
-
-        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-        length=${#names[@]}
-        let l=$length-1
-        for i in $(seq 0 $l); do
-          if [ -n "${values[i]}" ]; then
-            if [[ ${names[i]} = *_PATH ]]; then
-              values[$i]="$GITHUB_WORKSPACE/${values[i]}"
+        cd "$GITHUB_WORKSPACE"
+        for i in 'TOKEN=${{ inputs.token }}' 'USERNAME=${{ inputs.username }}' \
+        'HEADER_FORMAT=${{ inputs.header-format }}' 'HIGHLIGHT_FORMAT=${{ inputs.highlight-format }}' \
+        'FILE_BEFORE_PATH=${{ inputs.file-before-path }}' 'FILE_AFTER_PATH=${{ inputs.file-after-path }}' \
+        'MINIMUM_STARS_FOR_HIGHLIGHT=${{ inputs.minimum-stars-for-highlight }}' \
+        'MONTHS_INTERVAL=${{ inputs.months-interval }}' \
+        'MOCK_GET_CONTRIBUTIONS_FN=${{ inputs.mock-get-contributions-fn }}' \
+        'OUTPUT_FILE_PATH=${{ inputs.output-file-path }}'; do
+          key="$(node scripts/splitString.js $i '=' 0)"
+          value="$(node scripts/splitString.js $i '=' 1)"
+          if [ -n "$value" ]; then
+            if [[ $key = *_PATH ]]; then
+              value="$GITHUB_WORKSPACE/$value"
             fi
-            echo "${names[i]}<<$EOF" >> "$GITHUB_ENV"
-            echo "${values[i]}" >> "$GITHUB_ENV"
-            echo "$EOF" >> "$GITHUB_ENV"
+            declare -gx "$key=$value"
+          else
+            unset "$key"
           fi
         done
-      shell: bash
-    - name: Run
-      run: cd '${{ github.action_path }}' && npm start --silent > "$OUTPUT_FILE_PATH"
+        cd '${{ github.action_path }}' && npm start --silent > "$OUTPUT_FILE_PATH"
       shell: bash
     - name: Commit
       run: |
