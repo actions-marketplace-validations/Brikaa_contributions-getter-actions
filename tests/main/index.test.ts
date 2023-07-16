@@ -11,6 +11,7 @@ import { expect, jest } from "@jest/globals";
 import { getContributionsMarkdownUsingEnvConfig } from "../../main/getContributionsMarkdown";
 import path from "path";
 import { writeFileSync } from "fs";
+import { generateRandomString } from "../../main/util";
 
 type Environment = { [key: string]: string | undefined };
 const MONTHS_INTERVAL = "11";
@@ -34,8 +35,12 @@ const setProcessEnv = (env: Environment) => {
 };
 
 afterAll(async () => {
-  // Output result of all modified configs to a file which will be used while testing the GitHub action
-  const env: Environment = {
+  // Output result of different configs and their env varas to a file which will be used while testing the GitHub action
+  setProcessEnv({
+    MOCK_GET_CONTRIBUTIONS_FN: MULTIPLE_YEARS_GET_CONTRIBUTION_FN,
+  });
+  const allDefaultMarkdown = await getContributionsMarkdownUsingEnvConfig();
+  setProcessEnv({
     HEADER_FORMAT,
     HIGHLIGHT_FORMAT,
     FILE_BEFORE_PATH,
@@ -43,18 +48,25 @@ afterAll(async () => {
     MINIMUM_STARS_FOR_HIGHLIGHT,
     MONTHS_INTERVAL,
     MOCK_GET_CONTRIBUTIONS_FN: MULTIPLE_YEARS_GET_CONTRIBUTION_FN,
-  };
-  setProcessEnv(env);
+  }); // We do this last because we want to write the all-modified config to the env file
+  const allModifiedMarkdown = await getContributionsMarkdownUsingEnvConfig();
   let envStr = "";
+  const randomString = generateRandomString();
   for (const key in process.env) {
     const value = process.env[key];
     if (value !== undefined) {
-      envStr += `${key}<<EOF\n${value}\nEOF\n`;
+      envStr += `${key}<<${randomString}\n${value}\n${randomString}\n`;
     }
   }
-  const markdown = await getContributionsMarkdownUsingEnvConfig();
-  writeFileSync(path.join(__dirname, "/outputs/unit.md"), markdown + '\n');
   writeFileSync(path.join(__dirname, "/outputs/.env"), envStr);
+  writeFileSync(
+    path.join(__dirname, "/outputs/all-default-unit.md"),
+    allDefaultMarkdown + "\n",
+  );
+  writeFileSync(
+    path.join(__dirname, "/outputs/all-modified-unit.md"),
+    allModifiedMarkdown + "\n",
+  );
 });
 
 const testAgainstEnv = async (env: Environment, expectedMarkdown: string) => {

@@ -1,6 +1,4 @@
-TODO
-    - Script to generate the heredoc format (DRY, reliability in index.test.ts, main.yml)
-    - Use monthsInterval, token, username in mock objects to verify they are passed correctly
-    - Output all defaults step -> Actual check
-    - Configurable sort?
-    - Repos ignore?
+- Use monthsInterval, token, username in mock objects to verify they are passed correctly
+- Configurable date format, don't force h2, h3
+- Configurable contributions sorting
+- Configurable ignorable repos

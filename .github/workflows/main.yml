@@ -4,6 +4,8 @@ jobs:
   contributions_getter_job:
     runs-on: ubuntu-latest
     name: contributions-getter
+    env:
+      TESTS_OUTPUT_PATH: tests/main/outputs
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -15,19 +17,17 @@ jobs:
       - name: Run unit tests
         run: npm test
         shell: bash
-      - name: Set env vars
+      - name: Set env vars and temp files
         run: |
-          cat tests/main/outputs/.env >> $GITHUB_ENV
-          echo "TESTS_RESULT<<EOF" >> $GITHUB_ENV
-          cat tests/main/outputs/unit.md >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          cat "$TESTS_OUTPUT_PATH/.env" >> $GITHUB_ENV
+          cp "$TESTS_OUTPUT_PATH/"* "$RUNNER_TEMP/"
         shell: bash
-      - name: Set happy path output
+      - name: Write all-modified file
         uses: ./
         with:
           token: ${{ env.TOKEN }}
           username: ${{ env.USERNAME }}
-          output-file-path: tests/main/outputs/action.md
+          output-file-path: ${{ env.TESTS_OUTPUT_PATH }}/all-modified-action.md
           header-format: ${{ env.HEADER_FORMAT }}
           highlight-format: ${{ env.HIGHLIGHT_FORMAT }}
           file-before-path: ${{ env.FILE_BEFORE_PATH }}
@@ -35,29 +35,35 @@ jobs:
           minimum-stars-for-highlight: ${{ env.MINIMUM_STARS_FOR_HIGHLIGHT }}
           months-interval: ${{ env.MONTHS_INTERVAL }}
           mock-get-contributions-fn: ${{ env.MOCK_GET_CONTRIBUTIONS_FN }}
-      - name: Verify happy path output
-        run: |
-          echo "$TESTS_RESULT" > tests/main/outputs/unit.md
-          echo "================= unit.md ================="
-          cat tests/main/outputs/unit.md
-          echo "================= action.md ================="
-          cat tests/main/outputs/action.md
-          if cmp tests/main/outputs/unit.md tests/main/outputs/action.md ; then
-            echo "Got same output as unit tests"
-          else
-            echo "Got different output than unit tests"
-            exit 1
-          fi
+      - name: Copy output to temp
+        run: cp "$TESTS_OUTPUT_PATH"/* "$RUNNER_TEMP/"
         shell: bash
-      - name: Test with all defaults
+      - name: Write all-default file
         uses: ./
         with:
           token: ${{ env.TOKEN }}
           username: ${{ env.USERNAME }}
           mock-get-contributions-fn: ${{ env.MOCK_GET_CONTRIBUTIONS_FN }}
-          output-file-path: tests/main/outputs/action.md
-      - name: Output all defaults result
-        run: cat tests/main/outputs/action.md
+          output-file-path: ${{ env.TESTS_OUTPUT_PATH }}/all-default-action.md
+      - name: Copy output to temp
+        run: cp "$TESTS_OUTPUT_PATH/"* "$RUNNER_TEMP/"
+        shell: bash
+      - name: Verify files against files generated from unit tests
+        run: |
+          for i in 'all-modified' 'all-default' ; do
+            unit_file="$RUNNER_TEMP/$i-unit.md"
+            action_file="$RUNNER_TEMP/$i-action.md"
+            echo "================= $unit_file ================="
+            cat "$unit_file"
+            echo "================= $action_file ================="
+            cat "$action_file"
+            if cmp "$unit_file" "$action_file" ; then
+              echo "Got same output as unit tests"
+            else
+              echo "Got different output than unit tests"
+              exit 1
+            fi
+          done
         shell: bash
       - id: escape-output-file-path
         name: Test escape output-file-path
