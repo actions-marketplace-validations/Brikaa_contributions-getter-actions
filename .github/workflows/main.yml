@@ -34,6 +34,7 @@ jobs:
           file-after-path: ${{ env.FILE_AFTER_PATH }}
           minimum-stars-for-highlight: ${{ env.MINIMUM_STARS_FOR_HIGHLIGHT }}
           months-interval: ${{ env.MONTHS_INTERVAL }}
+          sort-repos-fn: ${{ env.SORT_REPOS_FN }}
           mock-get-contributions-fn: ${{ env.MOCK_GET_CONTRIBUTIONS_FN }}
       - name: Copy output to temp
         run: cp "$TESTS_OUTPUT_PATH"/* "$RUNNER_TEMP/"

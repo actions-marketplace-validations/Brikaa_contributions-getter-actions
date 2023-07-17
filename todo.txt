@@ -1,3 +1,2 @@
-- Configurable contributions sorting
 - Configurable ignorable repos
 - Configurable date format, don't force h2, h3?

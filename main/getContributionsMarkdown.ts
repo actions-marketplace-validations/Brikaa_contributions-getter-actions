@@ -1,18 +1,21 @@
-import { getContributions } from "contributions-getter";
-import { Config, GET_CONTRIBUTIONS_TYPES } from "../types/configTypes";
+import { Config } from "contributions-getter";
 import {
   COMMITS_URL_SYMBOL,
   DEFAULT_HEADER_FORMAT,
   DEFAULT_HIGHLIGHT_FORMAT,
   DEFAULT_MINIMUM_STARS_FOR_HIGHLIGHT,
+  MOCK_GET_CONTRIBUTIONS_FN_TYPES,
   HEADER_SYMBOL,
   NO_COMMITS_SYMBOL,
   PRIMARY_LANGUAGE_SYMBOL,
   REPO_DESCRIPTION_SYMBOL,
   REPO_NAME_SYMBOL,
   REPO_URL_SYMBOL,
+  SORT_REPOS_FN_TYPES,
+  DEFAULT_SORT_REPOS_FN,
+  DEFAULT_MOCK_GET_CONTRIBUTIONS_FN,
 } from "./constants";
-import { Environment } from "../types/envTypes";
+import { Environment } from "./types";
 import { readFileSync } from "fs";
 import { cleanEnv, makeValidator, str } from "envalid";
 import { formatDate } from "./util";
@@ -20,35 +23,41 @@ import {
   emptyGetContributions,
   multipleYearsGetContributions,
   singleYearGetContributions,
-} from "../mocks/getContributionsMock";
+} from "../functions/getContributionsFunctions";
+import { sortByCommits, sortByStars } from "../functions/sortReposFunctions";
 
-const getContributionsMarkdown = async (
-  token: string,
-  userName: string,
-  config: Config = {},
-) => {
+const getContributionsMarkdown = async (env: Environment) => {
   const {
-    contributionsGetterConfig,
-    fileBefore,
-    fileAfter,
-    headerFormat = DEFAULT_HEADER_FORMAT,
-    highlightFormat = DEFAULT_HIGHLIGHT_FORMAT,
-    minimumStarsForHighlight = DEFAULT_MINIMUM_STARS_FOR_HIGHLIGHT,
-    getContributionsFn = getContributions,
-  } = config;
+    TOKEN,
+    USERNAME,
+    MONTHS_INTERVAL,
+    FILE_BEFORE_PATH,
+    FILE_AFTER_PATH,
+    HEADER_FORMAT,
+    HIGHLIGHT_FORMAT,
+    MINIMUM_STARS_FOR_HIGHLIGHT,
+    SORT_REPOS_FN,
+    MOCK_GET_CONTRIBUTIONS_FN: getContributionsFn,
+  } = env;
 
   const markdown: string[] = [];
-  if (fileBefore !== undefined)
-    markdown.push(readFileSync(fileBefore).toString());
+  if (FILE_BEFORE_PATH !== undefined)
+    markdown.push(readFileSync(FILE_BEFORE_PATH).toString());
 
   // Need to read the afterFile early in order to fail on error without wasting API quota
   const contentAfter =
-    fileAfter === undefined ? null : readFileSync(fileAfter).toString();
+    FILE_AFTER_PATH === undefined
+      ? null
+      : readFileSync(FILE_AFTER_PATH).toString();
 
+  const config: Config | undefined =
+    MONTHS_INTERVAL === undefined
+      ? undefined
+      : { monthsInterval: MONTHS_INTERVAL };
   const contributionsInterval = await getContributionsFn(
-    token,
-    userName,
-    contributionsGetterConfig,
+    TOKEN,
+    USERNAME,
+    config,
   );
 
   contributionsInterval
@@ -61,9 +70,9 @@ const getContributionsMarkdown = async (
       );
       ci.repos
         .filter((r) => !r.isPrivate)
+        .sort(SORT_REPOS_FN)
         .forEach((r) => {
-          const header = headerFormat
-            .replace(REPO_NAME_SYMBOL, r.name)
+          const header = HEADER_FORMAT.replace(REPO_NAME_SYMBOL, r.name)
             .replace(REPO_URL_SYMBOL, r.url)
             .replace(
               NO_COMMITS_SYMBOL,
@@ -80,8 +89,8 @@ const getContributionsMarkdown = async (
             );
 
           const highlighted =
-            r.stars >= minimumStarsForHighlight
-              ? highlightFormat.replace(HEADER_SYMBOL, header)
+            r.stars >= MINIMUM_STARS_FOR_HIGHLIGHT
+              ? HIGHLIGHT_FORMAT.replace(HEADER_SYMBOL, header)
               : header;
 
           markdown.push(`### ${highlighted}\n`);
@@ -102,56 +111,47 @@ export const getContributionsMarkdownUsingEnvConfig = async () => {
     else return xInt;
   });
 
-  const validGetContributionsFn = makeValidator((x) => {
-    const getContributionsType = GET_CONTRIBUTIONS_TYPES.find((c) => c === x);
-    if (getContributionsType === undefined)
-      throw new Error("Invalid MOCK_GET_CONTRIBUTIONS_FN");
-    else {
-      let getContributionsFn;
-      switch (getContributionsType) {
-        case "EMPTY":
-          getContributionsFn = emptyGetContributions;
-          break;
-        case "MULTIPLE":
-          getContributionsFn = multipleYearsGetContributions;
-          break;
-        case "SINGLE":
-          getContributionsFn = singleYearGetContributions;
-          break;
-      }
-      return getContributionsFn;
-    }
-  });
+  const buildValidValueValidator = <T, V extends string>(
+    envName: string,
+    allowedStrings: readonly V[],
+    nameValueMap: { [name in (typeof allowedStrings)[number]]: T },
+  ) =>
+    makeValidator((givenString) => {
+      const chosenString = allowedStrings.find((s) => s === givenString);
+      if (chosenString === undefined) throw new Error(`Invalid ${envName}`);
+      return nameValueMap[chosenString];
+    });
 
   const env = cleanEnv<Environment>(process.env, {
     TOKEN: str(),
     USERNAME: str(),
     FILE_AFTER_PATH: str({ default: undefined }),
     FILE_BEFORE_PATH: str({ default: undefined }),
-    HEADER_FORMAT: str({ default: undefined }),
-    HIGHLIGHT_FORMAT: str({ default: undefined }),
-    MINIMUM_STARS_FOR_HIGHLIGHT: int({ default: undefined }),
+    HEADER_FORMAT: str({ default: DEFAULT_HEADER_FORMAT }),
+    HIGHLIGHT_FORMAT: str({ default: DEFAULT_HIGHLIGHT_FORMAT }),
+    MINIMUM_STARS_FOR_HIGHLIGHT: int({
+      default: DEFAULT_MINIMUM_STARS_FOR_HIGHLIGHT,
+    }),
     MONTHS_INTERVAL: int({ default: undefined }),
-    MOCK_GET_CONTRIBUTIONS_FN: validGetContributionsFn({ default: undefined }),
+    SORT_REPOS_FN: buildValidValueValidator(
+      "SORT_REPOS_FN",
+      SORT_REPOS_FN_TYPES,
+      {
+        COMMITS: sortByCommits,
+        STARS: sortByStars,
+      },
+    )({ default: DEFAULT_SORT_REPOS_FN }),
+    MOCK_GET_CONTRIBUTIONS_FN: buildValidValueValidator(
+      "MOCK_GET_CONTRIBUTIONS_FN",
+      MOCK_GET_CONTRIBUTIONS_FN_TYPES,
+      {
+        EMPTY: emptyGetContributions,
+        MULTIPLE: multipleYearsGetContributions,
+        SINGLE: singleYearGetContributions,
+      },
+    )({ default: DEFAULT_MOCK_GET_CONTRIBUTIONS_FN }),
   });
 
-  const config: Config = {
-    headerFormat: env.HEADER_FORMAT,
-    highlightFormat: env.HIGHLIGHT_FORMAT,
-    fileBefore: env.FILE_BEFORE_PATH,
-    fileAfter: env.FILE_AFTER_PATH,
-    minimumStarsForHighlight: env.MINIMUM_STARS_FOR_HIGHLIGHT,
-    getContributionsFn: env.MOCK_GET_CONTRIBUTIONS_FN,
-  };
-  if (env.MONTHS_INTERVAL !== undefined)
-    config.contributionsGetterConfig = {
-      monthsInterval: env.MONTHS_INTERVAL,
-    };
-
-  const markdown = await getContributionsMarkdown(
-    env.TOKEN,
-    env.USERNAME,
-    config,
-  );
+  const markdown = await getContributionsMarkdown(env);
   return markdown;
 };

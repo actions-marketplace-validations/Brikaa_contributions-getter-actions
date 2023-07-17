@@ -1,3 +1,6 @@
+import { getContributions } from "contributions-getter";
+import { sortByCommits } from "../functions/sortReposFunctions";
+
 // To be used in header format. Represents the name of the repository
 export const REPO_NAME_SYMBOL = "$REPO_NAME";
 // To be used in header format. Represents the URL of the repository
@@ -23,4 +26,12 @@ export const DEFAULT_HEADER_FORMAT = `[${REPO_NAME_SYMBOL}](${REPO_URL_SYMBOL}) 
 export const DEFAULT_HIGHLIGHT_FORMAT = `⭐ ${HEADER_SYMBOL}`;
 export const DEFAULT_MINIMUM_STARS_FOR_HIGHLIGHT = 1000;
 
-export const DEFAULT_MONTHS_INTERVAL = 12;
+export const DEFAULT_SORT_REPOS_FN = sortByCommits;
+export const DEFAULT_MOCK_GET_CONTRIBUTIONS_FN = getContributions;
+
+export const MOCK_GET_CONTRIBUTIONS_FN_TYPES = [
+  "EMPTY",
+  "SINGLE",
+  "MULTIPLE",
+] as const;
+export const SORT_REPOS_FN_TYPES = ["COMMITS", "STARS"] as const;

@@ -1,5 +1,5 @@
 import { Config, ContributionsInterval } from "contributions-getter";
-import { GetContributions } from "../types/configTypes";
+import { GetContributions } from "../main/types";
 
 const createRepoHeader = (username: string, config?: Config) =>
   `${username}-${
