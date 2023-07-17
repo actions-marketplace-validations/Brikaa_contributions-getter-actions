@@ -1,3 +1,2 @@
 - CI check formatting
-- Automated way to do the for loop in action.yml
 - Configurable date format, don't force h2, h3?

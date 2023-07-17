@@ -59,16 +59,11 @@ runs:
     - name: Set env vars and run
       run: |
         cd "$GITHUB_WORKSPACE"
-        for i in 'TOKEN=${{ inputs.token }}' 'USERNAME=${{ inputs.username }}' \
-        'HEADER_FORMAT=${{ inputs.header-format }}' 'HIGHLIGHT_FORMAT=${{ inputs.highlight-format }}' \
-        'FILE_BEFORE_PATH=${{ inputs.file-before-path }}' 'FILE_AFTER_PATH=${{ inputs.file-after-path }}' \
-        'MINIMUM_STARS_FOR_HIGHLIGHT=${{ inputs.minimum-stars-for-highlight }}' \
-        'MONTHS_INTERVAL=${{ inputs.months-interval }}' \
-        'MOCK_GET_CONTRIBUTIONS_FN=${{ inputs.mock-get-contributions-fn }}' \
-        'OUTPUT_FILE_PATH=${{ inputs.output-file-path }}' 'SORT_REPOS_FN=${{ inputs.sort-repos-fn }}' \
-        'REPOS_TO_IGNORE=${{ inputs.repos-to-ignore }}'; do
-          key="$(node scripts/splitString.js $i '=' 0)"
-          value="$(node scripts/splitString.js $i '=' 1)"
+        l=$(node scripts/inputsToDeclarations.js "$INPUTS")
+        for i in $(seq 1 $l); do
+          declaration=$(node scripts/inputsToDeclarations.js "$INPUTS" "$i")
+          key="$(node scripts/splitString.js $declaration '=' 1)"
+          value="$(node scripts/splitString.js $declaration '=' 2)"
           if [ -n "$value" ]; then
             if [[ $key = *_PATH ]]; then
               value="$GITHUB_WORKSPACE/$value"
@@ -80,6 +75,8 @@ runs:
         done
         cd '${{ github.action_path }}' && npm start --silent > "$OUTPUT_FILE_PATH"
       shell: bash
+      env:
+        INPUTS: ${{ toJson(inputs) }}
     - name: Commit
       run: |
         cd "$GITHUB_WORKSPACE"
