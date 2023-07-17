@@ -28,7 +28,7 @@ const getContributionsMarkdown = async (
   config: Config = {},
 ) => {
   const {
-    contributionsGetterConfig = {},
+    contributionsGetterConfig,
     fileBefore,
     fileAfter,
     headerFormat = DEFAULT_HEADER_FORMAT,
@@ -136,9 +136,6 @@ export const getContributionsMarkdownUsingEnvConfig = async () => {
   });
 
   const config: Config = {
-    contributionsGetterConfig: {
-      monthsInterval: env.MONTHS_INTERVAL,
-    },
     headerFormat: env.HEADER_FORMAT,
     highlightFormat: env.HIGHLIGHT_FORMAT,
     fileBefore: env.FILE_BEFORE_PATH,
@@ -146,6 +143,11 @@ export const getContributionsMarkdownUsingEnvConfig = async () => {
     minimumStarsForHighlight: env.MINIMUM_STARS_FOR_HIGHLIGHT,
     getContributionsFn: env.MOCK_GET_CONTRIBUTIONS_FN,
   };
+  if (env.MONTHS_INTERVAL !== undefined)
+    config.contributionsGetterConfig = {
+      monthsInterval: env.MONTHS_INTERVAL,
+    };
+
   const markdown = await getContributionsMarkdown(
     env.TOKEN,
     env.USERNAME,

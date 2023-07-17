@@ -1,12 +1,21 @@
-import { ContributionsInterval } from "contributions-getter";
+import { Config, ContributionsInterval } from "contributions-getter";
 import { GetContributions } from "../types/configTypes";
 
-const FIRST_YEAR_CONTRIBUTION: ContributionsInterval = {
+const createRepoHeader = (username: string, config?: Config) =>
+  `${username}-${
+    config?.monthsInterval === undefined ? "12" : config.monthsInterval
+  }`;
+
+const firstYearContributions = (
+  _token: string,
+  username: string,
+  config?: Config,
+): ContributionsInterval => ({
   startDate: new Date("2019-07-10T18:19:55.477Z"),
   endDate: new Date("2020-07-10T18:19:55.477Z"),
   repos: [
     {
-      name: "First repo",
+      name: createRepoHeader(username, config),
       description: "It's a cool repo",
       commits: 123,
       commitsUrl: "https://www.youtube.com",
@@ -26,20 +35,24 @@ const FIRST_YEAR_CONTRIBUTION: ContributionsInterval = {
       url: "https://www.fast.com",
     },
   ],
-};
+});
 
-const SECOND_YEAR_CONTRIBUTION: ContributionsInterval = {
+const secondYearContributions = (): ContributionsInterval => ({
   startDate: new Date("2020-07-10T18:19:55.477Z"),
   endDate: new Date("2021-07-10T18:19:55.477Z"),
   repos: [],
-};
+});
 
-const THIRD_YEAR_CONTRIBUTION: ContributionsInterval = {
+const thirdYearContributions = (
+  _token: string,
+  username: string,
+  config?: Config,
+): ContributionsInterval => ({
   startDate: new Date("2021-07-10T18:19:55.477Z"),
   endDate: new Date("2022-07-10T18:19:55.477Z"),
   repos: [
     {
-      name: "third-repo",
+      name: createRepoHeader(username, config),
       description: "It's a repo",
       commits: 450,
       commitsUrl: "https://www.github.com/new",
@@ -59,19 +72,23 @@ const THIRD_YEAR_CONTRIBUTION: ContributionsInterval = {
       url: "https://www.github.com/microsoft/vscode",
     },
   ],
-};
+});
 
 const createMockGetContributions =
-  (returnValue: ContributionsInterval[]): GetContributions =>
-  async () =>
-    returnValue;
+  (
+    contributionsIntervalBuilder: ((
+      ...args: Parameters<GetContributions>
+    ) => ContributionsInterval)[],
+  ): GetContributions =>
+  async (...args: Parameters<GetContributions>) =>
+    contributionsIntervalBuilder.map((b) => b(...args));
 
 export const emptyGetContributions = createMockGetContributions([]);
 export const singleYearGetContributions = createMockGetContributions([
-  FIRST_YEAR_CONTRIBUTION,
+  firstYearContributions,
 ]);
 export const multipleYearsGetContributions = createMockGetContributions([
-  FIRST_YEAR_CONTRIBUTION,
-  SECOND_YEAR_CONTRIBUTION,
-  THIRD_YEAR_CONTRIBUTION,
+  firstYearContributions,
+  secondYearContributions,
+  thirdYearContributions,
 ]);
