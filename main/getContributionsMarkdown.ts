@@ -14,6 +14,7 @@ import {
   SORT_REPOS_FN_TYPES,
   DEFAULT_SORT_REPOS_FN,
   DEFAULT_MOCK_GET_CONTRIBUTIONS_FN,
+  DEFAULT_REPOS_TO_IGNORE,
 } from "./constants";
 import { Environment } from "./types";
 import { readFileSync } from "fs";
@@ -36,6 +37,7 @@ const getContributionsMarkdown = async (env: Environment) => {
     HEADER_FORMAT,
     HIGHLIGHT_FORMAT,
     MINIMUM_STARS_FOR_HIGHLIGHT,
+    REPOS_TO_IGNORE,
     SORT_REPOS_FN,
     MOCK_GET_CONTRIBUTIONS_FN: getContributionsFn,
   } = env;
@@ -61,6 +63,12 @@ const getContributionsMarkdown = async (env: Environment) => {
   );
 
   contributionsInterval
+    .map((ci) => ({
+      ...ci,
+      repos: ci.repos.filter(
+        (r) => !REPOS_TO_IGNORE.includes(r.name) && !r.isPrivate,
+      ),
+    }))
     .filter((ci) => ci.repos.length > 0)
     .forEach((ci) => {
       markdown.push(
@@ -68,33 +76,27 @@ const getContributionsMarkdown = async (env: Environment) => {
           ci.endDate,
         )}\n\n<details>\n`,
       );
-      ci.repos
-        .filter((r) => !r.isPrivate)
-        .sort(SORT_REPOS_FN)
-        .forEach((r) => {
-          const header = HEADER_FORMAT.replace(REPO_NAME_SYMBOL, r.name)
-            .replace(REPO_URL_SYMBOL, r.url)
-            .replace(
-              NO_COMMITS_SYMBOL,
-              r.commits.toString() + (r.commits === 1 ? " commit" : " commits"),
-            )
-            .replace(COMMITS_URL_SYMBOL, r.commitsUrl)
-            .replace(
-              PRIMARY_LANGUAGE_SYMBOL,
-              r.primaryLanguage ?? "no primary language",
-            )
-            .replace(
-              REPO_DESCRIPTION_SYMBOL,
-              r.description ?? "no description",
-            );
+      ci.repos.sort(SORT_REPOS_FN).forEach((r) => {
+        const header = HEADER_FORMAT.replace(REPO_NAME_SYMBOL, r.name)
+          .replace(REPO_URL_SYMBOL, r.url)
+          .replace(
+            NO_COMMITS_SYMBOL,
+            r.commits.toString() + (r.commits === 1 ? " commit" : " commits"),
+          )
+          .replace(COMMITS_URL_SYMBOL, r.commitsUrl)
+          .replace(
+            PRIMARY_LANGUAGE_SYMBOL,
+            r.primaryLanguage ?? "no primary language",
+          )
+          .replace(REPO_DESCRIPTION_SYMBOL, r.description ?? "no description");
 
-          const highlighted =
-            r.stars >= MINIMUM_STARS_FOR_HIGHLIGHT
-              ? HIGHLIGHT_FORMAT.replace(HEADER_SYMBOL, header)
-              : header;
+        const highlighted =
+          r.stars >= MINIMUM_STARS_FOR_HIGHLIGHT
+            ? HIGHLIGHT_FORMAT.replace(HEADER_SYMBOL, header)
+            : header;
 
-          markdown.push(`### ${highlighted}\n`);
-        });
+        markdown.push(`### ${highlighted}\n`);
+      });
       markdown.push(`</details>`);
       markdown.push("");
     });
@@ -110,6 +112,8 @@ export const getContributionsMarkdownUsingEnvConfig = async () => {
     if (isNaN(xInt)) throw new Error("Expected a number");
     else return xInt;
   });
+
+  const reposToIgnore = makeValidator((x) => x.split(",").map((x) => x.trim()));
 
   const buildValidValueValidator = <T, V extends string>(
     envName: string,
@@ -133,6 +137,7 @@ export const getContributionsMarkdownUsingEnvConfig = async () => {
       default: DEFAULT_MINIMUM_STARS_FOR_HIGHLIGHT,
     }),
     MONTHS_INTERVAL: int({ default: undefined }),
+    REPOS_TO_IGNORE: reposToIgnore({ default: DEFAULT_REPOS_TO_IGNORE }),
     SORT_REPOS_FN: buildValidValueValidator(
       "SORT_REPOS_FN",
       SORT_REPOS_FN_TYPES,

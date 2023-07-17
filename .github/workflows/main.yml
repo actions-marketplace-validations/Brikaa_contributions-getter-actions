@@ -35,6 +35,7 @@ jobs:
           minimum-stars-for-highlight: ${{ env.MINIMUM_STARS_FOR_HIGHLIGHT }}
           months-interval: ${{ env.MONTHS_INTERVAL }}
           sort-repos-fn: ${{ env.SORT_REPOS_FN }}
+          repos-to-ignore: ${{ env.REPOS_TO_IGNORE }}
           mock-get-contributions-fn: ${{ env.MOCK_GET_CONTRIBUTIONS_FN }}
       - name: Copy output to temp
         run: cp "$TESTS_OUTPUT_PATH"/* "$RUNNER_TEMP/"
@@ -73,7 +74,7 @@ jobs:
         with:
           token: ${{ env.TOKEN }}
           username: ${{ env.USERNAME }}
-          output-file-path: ${{ github.env }}
+          output-file-path: ../evil/thing
       - name: Fail if previous did not fail
         run: exit 1
         shell: bash
@@ -85,7 +86,7 @@ jobs:
         with:
           token: ${{ env.TOKEN }}
           username: ${{ env.USERNAME }}
-          file-before-path: ${{ github.env }}
+          file-before-path: ../evil/thing
       - name: Fail if previous did not fail
         run: exit 1
         shell: bash
@@ -97,7 +98,7 @@ jobs:
         with:
           token: ${{ env.TOKEN }}
           username: ${{ env.USERNAME }}
-          file-after-path: ${{ github.env }}
+          file-after-path: ../evil/thing
       - name: Fail if previous did not fail
         run: exit 1
         shell: bash

@@ -36,6 +36,9 @@ inputs:
   sort-repos-fn:
     description: Check documentation
     required: false
+  repos-to-ignore:
+    description: Check documentation
+    required: false
 runs:
   using: composite
   steps:
@@ -43,15 +46,15 @@ runs:
       uses: actions/checkout@v3
     - name: Setup Node
       uses: actions/setup-node@v3
-    - name: Install npm packages and build code
-      run: cd '${{ github.action_path }}' && npm ci && npm run build
-      shell: bash
     - name: Validate paths
       run: |
         cd "$GITHUB_WORKSPACE"
         for i in '${{ inputs.output-file-path }}' '${{ inputs.file-before-path }}' '${{ inputs.file-after-path }}'; do
           node scripts/checkSafePath.js "$(pwd)" "$i" || exit 1
         done
+      shell: bash
+    - name: Install npm packages and build code
+      run: cd '${{ github.action_path }}' && npm ci && npm run build
       shell: bash
     - name: Set env vars and run
       run: |
@@ -62,8 +65,8 @@ runs:
         'MINIMUM_STARS_FOR_HIGHLIGHT=${{ inputs.minimum-stars-for-highlight }}' \
         'MONTHS_INTERVAL=${{ inputs.months-interval }}' \
         'MOCK_GET_CONTRIBUTIONS_FN=${{ inputs.mock-get-contributions-fn }}' \
-        'OUTPUT_FILE_PATH=${{ inputs.output-file-path }}' \
-        'SORT_REPOS_FN=${{ inputs.sort-repos-fn }}'; do
+        'OUTPUT_FILE_PATH=${{ inputs.output-file-path }}' 'SORT_REPOS_FN=${{ inputs.sort-repos-fn }}' \
+        'REPOS_TO_IGNORE=${{ inputs.repos-to-ignore }}'; do
           key="$(node scripts/splitString.js $i '=' 0)"
           value="$(node scripts/splitString.js $i '=' 1)"
           if [ -n "$value" ]; then
