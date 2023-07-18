@@ -1,6 +1,10 @@
 name: contributions-getter-actions
+author: Omar Brikaa
 description: |
   Update a markdown file with all of the repositories a user has contributed to since their account's creation.
+branding:
+  icon: user-check
+  color: green
 inputs:
   token:
     description: Your GitHub token
