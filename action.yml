@@ -1,5 +1,6 @@
 name: contributions-getter-actions
-description: "Update a markdown file with all of the repositories you have contributed to since your account creation"
+description: |
+  Update a markdown file with all of the repositories a user has contributed to since their account's creation.
 inputs:
   token:
     description: Your GitHub token
@@ -13,31 +14,31 @@ inputs:
     required: false
     default: README.md
   header-format:
-    description: Check documentation
+    description: the format of the repository header
     required: false
   highlight-format:
-    description: Check documentation
+    description: the format of highlighted repositories (repositories having a certain number of stars)
     required: false
   file-before-path:
-    description: Check documentation
+    description: the path of the file containing the content to put before the contributions (relative to the repo)
     required: false
   file-after-path:
-    description: Check documentation
+    description: the path of the file containing the content to put after the contributions (relative to the repo)
     required: false
   minimum-stars-for-highlight:
-    description: Check documentation
+    description: the minimum stars required for a repository to be highlighted
     required: false
   months-interval:
-    description: Check documentation
+    description: the interval in which to get the contributions
     required: false
   mock-get-contributions-fn:
-    description: Check documentation
+    description: use this if you want to test with a mock function (can be one of "SINGLE", "EMPTY" or "MULTIPLE")
     required: false
   sort-repos-fn:
-    description: Check documentation
+    description: how to sort the repos in each contribution interval (can be one of "STARS" or "COMMITS")
     required: false
   repos-to-ignore:
-    description: Check documentation
+    description: comma separated list of repos to ignore
     required: false
 runs:
   using: composite
