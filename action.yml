@@ -53,17 +53,21 @@ runs:
       uses: actions/setup-node@v3
     - name: Validate paths
       run: |
-        cd "$GITHUB_WORKSPACE"
-        for i in '${{ inputs.output-file-path }}' '${{ inputs.file-before-path }}' '${{ inputs.file-after-path }}'; do
+        cd "$GITHUB_ACTION_PATH"
+        for i in "$OUTPUT_FILE_PATH" "$FILE_BEFORE_PATH" "$FILE_AFTER_PATH"; do
           node scripts/checkSafePath.js "$(pwd)" "$i" || exit 1
         done
       shell: bash
+      env:
+        OUTPUT_FILE_PATH: ${{ inputs.output-file-path }}
+        FILE_BEFORE_PATH: ${{ inputs.file-before-path }}
+        FILE_AFTER_PATH: ${{ inputs.file-after-path }}
     - name: Install npm packages and build code
-      run: cd '${{ github.action_path }}' && npm ci && npm run build
+      run: cd "$GITHUB_ACTION_PATH" && npm ci && npm run build
       shell: bash
     - name: Set env vars and run
       run: |
-        cd "$GITHUB_WORKSPACE"
+        cd "$GITHUB_ACTION_PATH"
         l=$(node scripts/inputsToDeclarations.js "$INPUTS")
         for i in $(seq 1 $l); do
           declaration=$(node scripts/inputsToDeclarations.js "$INPUTS" "$i")
@@ -78,7 +82,7 @@ runs:
             unset "$key"
           fi
         done
-        cd '${{ github.action_path }}' && npm start --silent > "$OUTPUT_FILE_PATH"
+        npm start --silent > "$OUTPUT_FILE_PATH"
       shell: bash
       env:
         INPUTS: ${{ toJson(inputs) }}
