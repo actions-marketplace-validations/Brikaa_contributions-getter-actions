@@ -1,2 +1,1 @@
-- CI check formatting
 - Configurable date format, don't force h2, h3?
